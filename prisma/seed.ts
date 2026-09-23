@@ -306,9 +306,9 @@ async function main() {
       for (const b of prod.batches) {
         if (need <= 0) break;
         const take = Math.min(need, b.quantity);
-        const price = b.salePrice;
+        const price = Number(b.salePrice);
         const lineSub = price * take;
-        const taxAmt = prod.taxable ? lineSub * prod.taxRate / 100 : 0;
+        const taxAmt = prod.taxable ? lineSub * Number(prod.taxRate) / 100 : 0;
         allocs.push({ batchId: b.id, qty: take, price, taxAmt, total: lineSub + taxAmt });
         subtotal += lineSub;
         tax += taxAmt;

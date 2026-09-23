@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// LOCAL DEV: sqlite. FOR VERCEL / PROD: change provider to "postgresql".
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // Role: OWNER | PHARMACIST | CASHIER
@@ -37,7 +37,7 @@ model Supplier {
   phone     String?
   ntn       String?
   address   String?
-  balance   Float      @default(0)
+  balance   Decimal    @default(0) @db.Decimal(12, 2)
   createdAt DateTime   @default(now())
   purchases Purchase[]
 }
@@ -48,7 +48,7 @@ model Customer {
   phone         String?       @unique
   cnic          String?
   address       String?
-  balance       Float         @default(0)
+  balance       Decimal       @default(0) @db.Decimal(12, 2)
   createdAt     DateTime      @default(now())
   sales         Sale[]
   ledgerEntries CustomerLedger[]
@@ -65,7 +65,7 @@ model Product {
   unit         String   @default("pcs")
   packSize     Int      @default(1)
   taxable      Boolean  @default(false)
-  taxRate      Float    @default(0)
+  taxRate      Decimal  @default(0) @db.Decimal(5, 2)
   minStock     Int      @default(10)
   scheduleG    Boolean  @default(false)
   active       Boolean  @default(true)
@@ -81,8 +81,8 @@ model Batch {
   product        Product       @relation(fields: [productId], references: [id])
   batchNo        String
   expiry         DateTime
-  costPrice      Float
-  salePrice      Float
+  costPrice      Decimal       @db.Decimal(12, 2)
+  salePrice      Decimal       @db.Decimal(12, 2)
   quantity       Int
   purchaseItemId String?       @unique
   purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id])
@@ -99,10 +99,10 @@ model Purchase {
   supplier   Supplier       @relation(fields: [supplierId], references: [id])
   invoiceNo  String
   date       DateTime       @default(now())
-  subtotal   Float
-  tax        Float          @default(0)
-  total      Float
-  paid       Float          @default(0)
+  subtotal   Decimal        @db.Decimal(12, 2)
+  tax        Decimal        @default(0) @db.Decimal(12, 2)
+  total      Decimal        @db.Decimal(12, 2)
+  paid       Decimal        @default(0) @db.Decimal(12, 2)
   notes      String?
   items      PurchaseItem[]
 }
@@ -115,8 +115,8 @@ model PurchaseItem {
   batchNo    String
   expiry     DateTime
   quantity   Int
-  costPrice  Float
-  salePrice  Float
+  costPrice  Decimal  @db.Decimal(12, 2)
+  salePrice  Decimal  @db.Decimal(12, 2)
   batch      Batch?
 }
 
@@ -128,11 +128,11 @@ model Sale {
   cashierId     String
   cashier       User          @relation(fields: [cashierId], references: [id])
   date          DateTime      @default(now())
-  subtotal      Float
-  discount      Float         @default(0)
-  tax           Float         @default(0)
-  total         Float
-  paid          Float
+  subtotal      Decimal       @db.Decimal(12, 2)
+  discount      Decimal       @default(0) @db.Decimal(12, 2)
+  tax           Decimal       @default(0) @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
+  paid          Decimal       @db.Decimal(12, 2)
   paymentMode   String        @default("CASH")
   notes         String?
   items         SaleItem[]
@@ -149,9 +149,9 @@ model SaleItem {
   batchId  String
   batch    Batch   @relation(fields: [batchId], references: [id])
   quantity Int
-  price    Float
-  taxAmt   Float   @default(0)
-  total    Float
+  price    Decimal @db.Decimal(12, 2)
+  taxAmt   Decimal @default(0) @db.Decimal(12, 2)
+  total    Decimal @db.Decimal(12, 2)
 }
 
 model Prescription {
@@ -171,8 +171,8 @@ model CustomerLedger {
   sale       Sale?      @relation(fields: [saleId], references: [id])
   date       DateTime   @default(now())
   type       String
-  debit      Float      @default(0)
-  credit     Float      @default(0)
+  debit      Decimal    @default(0) @db.Decimal(12, 2)
+  credit     Decimal    @default(0) @db.Decimal(12, 2)
   notes      String?
 
   @@index([customerId, date])
