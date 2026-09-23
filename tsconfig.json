@@ -10,6 +10,6 @@
     "resolveJsonModule": true,
     "outDir": "./dist"
   },
-  "include": ["api/**/*", "prisma/**/*"],
+  "include": ["api/**/*", "server/**/*", "prisma/**/*"],
   "exclude": ["node_modules", "client"]
 }

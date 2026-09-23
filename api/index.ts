@@ -1,16 +1,16 @@
 import express from 'express';
 import cors from 'cors';
-import auth from './routes/auth';
-import products from './routes/products';
-import categories from './routes/categories';
-import suppliers from './routes/suppliers';
-import customers from './routes/customers';
-import purchases from './routes/purchases';
-import inventory from './routes/inventory';
-import sales from './routes/sales';
-import reports from './routes/reports';
-import settings from './routes/settings';
-import { errorHandler } from './middleware/error';
+import auth from '../server/routes/auth';
+import products from '../server/routes/products';
+import categories from '../server/routes/categories';
+import suppliers from '../server/routes/suppliers';
+import customers from '../server/routes/customers';
+import purchases from '../server/routes/purchases';
+import inventory from '../server/routes/inventory';
+import sales from '../server/routes/sales';
+import reports from '../server/routes/reports';
+import settings from '../server/routes/settings';
+import { errorHandler } from '../server/middleware/error';
 
 const app = express();
 
