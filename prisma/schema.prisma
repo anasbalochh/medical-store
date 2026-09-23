@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// LOCAL DEV: sqlite. FOR VERCEL / PROD: change provider to "postgresql".
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Role: OWNER | PHARMACIST | CASHIER
+// PaymentMode: CASH | CARD | CREDIT | MIXED
+// LedgerType: SALE | PAYMENT | ADJUSTMENT | OPENING
+// StockMoveType: PURCHASE | SALE | RETURN_IN | RETURN_OUT | ADJUSTMENT | EXPIRY
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("CASHIER")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  sales        Sale[]
+  stockMoves   StockMove[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Supplier {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String?
+  ntn       String?
+  address   String?
+  balance   Float      @default(0)
+  createdAt DateTime   @default(now())
+  purchases Purchase[]
+}
+
+model Customer {
+  id            String        @id @default(cuid())
+  name          String
+  phone         String?       @unique
+  cnic          String?
+  address       String?
+  balance       Float         @default(0)
+  createdAt     DateTime      @default(now())
+  sales         Sale[]
+  ledgerEntries CustomerLedger[]
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  genericName  String?
+  manufacturer String?
+  barcode      String?  @unique
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  unit         String   @default("pcs")
+  packSize     Int      @default(1)
+  taxable      Boolean  @default(false)
+  taxRate      Float    @default(0)
+  minStock     Int      @default(10)
+  scheduleG    Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  batches      Batch[]
+
+  @@index([name])
+}
+
+model Batch {
+  id             String        @id @default(cuid())
+  productId      String
+  product        Product       @relation(fields: [productId], references: [id])
+  batchNo        String
+  expiry         DateTime
+  costPrice      Float
+  salePrice      Float
+  quantity       Int
+  purchaseItemId String?       @unique
+  purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id])
+  createdAt      DateTime      @default(now())
+  saleItems      SaleItem[]
+  stockMoves     StockMove[]
+
+  @@index([productId, expiry])
+}
+
+model Purchase {
+  id         String         @id @default(cuid())
+  supplierId String
+  supplier   Supplier       @relation(fields: [supplierId], references: [id])
+  invoiceNo  String
+  date       DateTime       @default(now())
+  subtotal   Float
+  tax        Float          @default(0)
+  total      Float
+  paid       Float          @default(0)
+  notes      String?
+  items      PurchaseItem[]
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId  String
+  batchNo    String
+  expiry     DateTime
+  quantity   Int
+  costPrice  Float
+  salePrice  Float
+  batch      Batch?
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  invoiceNo     String        @unique
+  customerId    String?
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  cashierId     String
+  cashier       User          @relation(fields: [cashierId], references: [id])
+  date          DateTime      @default(now())
+  subtotal      Float
+  discount      Float         @default(0)
+  tax           Float         @default(0)
+  total         Float
+  paid          Float
+  paymentMode   String        @default("CASH")
+  notes         String?
+  items         SaleItem[]
+  prescription  Prescription?
+  ledgerEntry   CustomerLedger?
+
+  @@index([date])
+}
+
+model SaleItem {
+  id       String  @id @default(cuid())
+  saleId   String
+  sale     Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  batchId  String
+  batch    Batch   @relation(fields: [batchId], references: [id])
+  quantity Int
+  price    Float
+  taxAmt   Float   @default(0)
+  total    Float
+}
+
+model Prescription {
+  id         String  @id @default(cuid())
+  saleId     String  @unique
+  sale       Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  imageUrl   String?
+  doctorName String?
+  notes      String?
+}
+
+model CustomerLedger {
+  id         String     @id @default(cuid())
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  saleId     String?    @unique
+  sale       Sale?      @relation(fields: [saleId], references: [id])
+  date       DateTime   @default(now())
+  type       String
+  debit      Float      @default(0)
+  credit     Float      @default(0)
+  notes      String?
+
+  @@index([customerId, date])
+}
+
+model StockMove {
+  id        String        @id @default(cuid())
+  batchId   String
+  batch     Batch         @relation(fields: [batchId], references: [id])
+  type      String
+  quantity  Int
+  refId     String?
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+  notes     String?
+
+  @@index([batchId, createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
